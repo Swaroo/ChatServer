@@ -47,6 +47,7 @@ PLATFORMS
 DEPENDENCIES
   puma
   sinatra
+  sinatra-cors
 
 BUNDLED WITH
    2.0.2

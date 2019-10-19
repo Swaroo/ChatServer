@@ -1,9 +1,18 @@
 require 'sinatra'
+require 'sinatra/cors'
 require 'digest'
+set :allow_methods, "localhost:3006"
+set :allow_methods, "GET,HEAD,POST"
+set :allow_headers, "content-type"
 
 #Global variables start with a capital letter
 UserPasswordHash = {}
 UserTokenHash = {}
+
+# Added this just for testing
+get '/' do
+  status 200
+end
 
 post '/login' do
   params.to_s
