@@ -10,9 +10,16 @@ class Login extends React.Component {
     // data that user types in from login form
     this.state = {
       username: '',
-      password: ''
+      password: '',
+      tokens: {
+        
+      }
     };
 
+  }
+
+  copyState = (obj) => {
+    return Object.assign({}, obj);
   }
 
   // update username in state when keys are typed into login form
@@ -34,13 +41,7 @@ class Login extends React.Component {
     console.log("username: " + this.state.username);
     console.log("password: " + this.state.password);
 
-    /*
-    var params = {
-      username: this.state.username,
-      password: this.state.password
-    }
-    */
-
+   // call post with user data
    axios.post( "http://localhost:3000/login", null, { 
       params: {
         username: this.state.username,
@@ -49,9 +50,29 @@ class Login extends React.Component {
       headers: { "Access-Control-Allow-Origin": "*", } 
     }).then((response) => {
       console.log(response);
+
+      // get JWT Token
+      var token = response["data"]["token"]
+
+      // store token in state as {user: token}
+      var all_tokens = this.copyState(this.state.tokens);
+      all_tokens[this.state.username] = token
+      this.setState({tokens: all_tokens})
+      console.log(this.state.tokens);
+
+      //TODO: Redirect to messageboard
+
     }, (error) => {
       console.log(error);
+      if (error.response.status === 403){
+        console.log("403");
+        alert("Wrong password");
+      }
+
     });
+
+
+    
    /*
    fetch('http://localhost:3000/login', {
     method: 'POST',

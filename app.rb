@@ -10,26 +10,7 @@ set :allow_origin, "http://localhost:3006"
 set :allow_methods, "GET,HEAD,POST"
 set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
 set :expose_headers, "location, link"
-=begin
-#set :allow_methods, :any
-#set :allow_methods, "GET,HEAD,POST"
-#set :allow_headers, "Content-Type"
-configure do
-  enable :cross_origin
-end
 
-before do
-  response.headers['Access-Control-Allow-Origin'] = '*'
-  #response.headers["Access-Control-Allow-Methods"] = "POST"
-end
-
-options "*" do
-  response.headers["Allow"] = "GET, PUT, POST, DELETE, OPTIONS"
-  response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, X-User-Email, X-Auth-Token"
-  response.headers["Access-Control-Allow-Origin"] = "*"
-  200
-end
-=end
 
 #Global variables start with a capital letter
 UserPasswordHash = {}
