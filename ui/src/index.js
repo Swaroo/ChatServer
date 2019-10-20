@@ -34,15 +34,35 @@ class Login extends React.Component {
     console.log("username: " + this.state.username);
     console.log("password: " + this.state.password);
 
-    // test to just call GET / 
-    // not working because of CORS
-    axios.get('localhost:3000')
-    .then(response => {
-      console.log(response.data);
-    })
-    .catch(error => {
+    /*
+    var params = {
+      username: this.state.username,
+      password: this.state.password
+    }
+    */
+
+   axios.post( "http://localhost:3000/login", null, { 
+      params: {
+        username: this.state.username,
+        password: this.state.password 
+      }, 
+      headers: { "Access-Control-Allow-Origin": "*", } 
+    }).then((response) => {
+      console.log(response);
+    }, (error) => {
       console.log(error);
     });
+   /*
+   fetch('http://localhost:3000/login', {
+    method: 'POST',
+    body: 'username=aa&password=bb' 
+  }).then(function(response) {
+    console.log(response);
+  });
+  */
+  
+
+   
 	}
 	
 	render() {

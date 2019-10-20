@@ -1,9 +1,35 @@
 require 'sinatra'
 require 'sinatra/cors'
+require 'sinatra/cross_origin'
 require 'digest'
-set :allow_methods, "localhost:3006"
+
+
+set :protection, false
+
+set :allow_origin, "http://localhost:3006"
 set :allow_methods, "GET,HEAD,POST"
-set :allow_headers, "content-type"
+set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
+set :expose_headers, "location, link"
+=begin
+#set :allow_methods, :any
+#set :allow_methods, "GET,HEAD,POST"
+#set :allow_headers, "Content-Type"
+configure do
+  enable :cross_origin
+end
+
+before do
+  response.headers['Access-Control-Allow-Origin'] = '*'
+  #response.headers["Access-Control-Allow-Methods"] = "POST"
+end
+
+options "*" do
+  response.headers["Allow"] = "GET, PUT, POST, DELETE, OPTIONS"
+  response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, X-User-Email, X-Auth-Token"
+  response.headers["Access-Control-Allow-Origin"] = "*"
+  200
+end
+=end
 
 #Global variables start with a capital letter
 UserPasswordHash = {}
@@ -15,7 +41,12 @@ get '/' do
 end
 
 post '/login' do
-  params.to_s
+  response['Access-Control-Allow-Origin'] = '*'
+  puts "post/login"
+
+  puts params.to_s
+
+
   if params["password"].nil? || params["username"].nil?
     return 422
   elsif params["password"] == "" || params["username"] == ""
@@ -24,6 +55,11 @@ post '/login' do
   #username and password are not null or empty at this stage
   username = params["username"]
   password = params["password"]
+  puts "\nusername : "
+  puts username
+
+  puts "\npassword: "
+  puts password
 
   #the user doesn't exist in our system
   if UserPasswordHash[username].nil?
