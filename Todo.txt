@@ -1,0 +1,1 @@
+1> Change password textbox type from text to password
