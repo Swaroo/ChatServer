@@ -2,6 +2,7 @@ require 'sinatra'
 require 'sinatra/cors'
 require 'sinatra/cross_origin'
 require 'digest'
+require 'pp'
 
 
 set :protection, false
@@ -55,11 +56,27 @@ post '/login' do
 
   #Now send a token back to user
   digest = Digest::SHA256.hexdigest(username+ "|"+ password)
-  UserTokenHash[username] = digest
+  UserTokenHash[digest] = username
   print UserPasswordHash
   print UserTokenHash
   status = 201
   headers = {"content-type" => "application/json"}
   body = {"token" => digest}.to_json
   [status,headers,body]
+end
+
+post '/message' do
+  header_data = request.env["HTTP_AUTHORIZATION"]
+  if header_data.nil? || header_data.empty? || params["message"].nil? || params["message"].empty?
+    return 422
+  end
+  to_be_validated_token = header_data[7, header_data.length] #strip Bearer from the string
+  puts(to_be_validated_token)
+
+  user = UserTokenHash[to_be_validated_token]
+  if user.nil? || user.empty?
+    return 403
+  end
+  puts("hello ",user)
+  return 201
 end
