@@ -9,8 +9,8 @@ set :protection, false
 
 set :allow_origin, "http://localhost:3006"
 set :allow_methods, "GET,HEAD,POST,DELETE, OPTIONS"
-#set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
-set :allow_headers, "*"
+set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
+#set :allow_headers, "*"
 set :expose_headers, "location, link"
 
 
