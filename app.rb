@@ -8,9 +8,16 @@ require 'pp'
 set :protection, false
 
 set :allow_origin, "http://localhost:3006"
-set :allow_methods, "GET,HEAD,POST"
-set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
+set :allow_methods, "GET,HEAD,POST,DELETE, OPTIONS"
+#set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
+set :allow_headers, "*"
 set :expose_headers, "location, link"
+
+
+#headers['Access-Control-Allow-Origin'] = '*'
+#headers['Access-Control-Allow-Methods'] = 'POST, PUT, DELETE, GET, OPTIONS'
+#headers['Access-Control-Request-Method'] = '*'
+#headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
 
 
 #Global variables start with a capital letter
@@ -66,6 +73,10 @@ post '/login' do
 end
 
 post '/message' do
+  response['Access-Control-Allow-Origin'] = '*'
+  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
+  response['Access-Control-Allow-Headers'] ="accept, authorization, origin"
+
   header_data = request.env["HTTP_AUTHORIZATION"]
   if header_data.nil? || header_data.empty? || params["message"].nil? || params["message"].empty?
     return 422
