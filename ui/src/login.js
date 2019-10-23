@@ -53,16 +53,16 @@ class Login extends React.Component {
       console.log(response);
 
       // get JWT Token
-      var token = response["data"]["token"]
+      var curr_token = response["data"]["token"]
 
       // store token in state as {user: token}
       var all_tokens = this.copyState(this.state.tokens);
-      all_tokens[this.state.username] = token
+      all_tokens[this.state.username] = curr_token
       this.setState({tokens: all_tokens})
       console.log(this.state.tokens);
       //props.history.push("/login");
       //TODO: Redirect to messageboard
-      this.props.history.push('/board')
+      this.props.history.push({pathname: '/board', state: {token: curr_token}})
 
     }, (error) => {
       console.log(error);
