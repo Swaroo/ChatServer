@@ -1,6 +1,6 @@
 require 'sinatra'
 require 'digest'
-require 'pp'
+require 'pp' #Pretty printing ruby objects, just for debugging
 
 
 
@@ -11,9 +11,9 @@ Message = Struct.new(:name, :msg, :post_time)
 
 before do
   if request.request_method == 'OPTIONS'
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3006"
-    response.headers["Access-Control-Allow-Methods"] = "POST, GET"
-    response.headers["Access-Control-Allow-Headers"] = "origin, x-requested-with, content-type, authorization, accept, access-control-allow-origin"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
     puts("Reached options")
     halt 200
   end
@@ -39,11 +39,6 @@ post '/login' do
   #username and password are not null or empty at this stage
   username = params["username"]
   password = params["password"]
-  puts "\nusername : "
-  puts username
-
-  puts "\npassword: "
-  puts password
 
   #the user doesn't exist in our system
   if UserPasswordHash[username].nil?
@@ -89,7 +84,10 @@ post '/message' do
   return 201
 end
 
-get '/stream', provides: 'text/event-stream' do
+get '/stream/:id', provides: 'text/event-stream' do
+  response['Access-Control-Allow-Origin'] = '*'
+  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
+  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
   stream :keep_open do |out|
     out << "HEllo"
   end

@@ -65,7 +65,7 @@ class Board extends React.Component {
 
     this.setState({token: old_state.token});
 
-    var es = new EventSource('http://localhost:3000/stream');
+    var es = new EventSource('http://localhost:3000/stream/1234');
 
     es.onmessage = function(e) {
       const msg = e.data;
