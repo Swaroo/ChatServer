@@ -7,10 +7,10 @@ require 'pp'
 
 set :protection, false
 
-set :allow_origin, "http://localhost:3006"
+set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST,DELETE, OPTIONS"
-set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin"
-#set :allow_headers, "*"
+#set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin, Authorization"
+set :allow_headers, "*"
 set :expose_headers, "location, link"
 
 
@@ -23,6 +23,17 @@ set :expose_headers, "location, link"
 #Global variables start with a capital letter
 UserPasswordHash = {}
 UserTokenHash = {}
+Message = Struct.new(:name, :msg, :post_time)
+
+before do
+  if request.request_method == 'OPTIONS'
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST"
+    response.headers["Access-Control-Allow-Headers"] = "origin, x-requested-with, content-type, authorization, accept, access-control-allow-origin"
+    puts("Reached options")
+    halt 200
+  end
+end
 
 # Added this just for testing
 get '/' do
@@ -75,7 +86,7 @@ end
 post '/message' do
   response['Access-Control-Allow-Origin'] = '*'
   response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
-  response['Access-Control-Allow-Headers'] ="accept, authorization, origin"
+  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
 
   header_data = request.env["HTTP_AUTHORIZATION"]
   if header_data.nil? || header_data.empty? || params["message"].nil? || params["message"].empty?
@@ -84,10 +95,12 @@ post '/message' do
   to_be_validated_token = header_data[7, header_data.length] #strip Bearer from the string
   puts(to_be_validated_token)
 
-  user = UserTokenHash[to_be_validated_token]
-  if user.nil? || user.empty?
+  name = UserTokenHash[to_be_validated_token]
+  if name.nil? || name.empty?
     return 403
   end
-  puts("hello ",user)
+  msg = params["message"]
+  message = Message.new(name, msg, Time.now.getutc.to_i)
+  puts(message)
   return 201
 end

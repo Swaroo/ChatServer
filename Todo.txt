@@ -1,1 +1,5 @@
 1> Change password textbox type from text to password
+
+2> If they hit the /board url directly without logging in, take them to the login page.
+
+3> CORS origin address is hardcoded, create an environment file for that and all other constants.
