@@ -1,23 +1,7 @@
 require 'sinatra'
-require 'sinatra/cors'
-require 'sinatra/cross_origin'
 require 'digest'
 require 'pp'
 
-
-set :protection, false
-
-set :allow_origin, "*"
-set :allow_methods, "GET,HEAD,POST,DELETE, OPTIONS"
-#set :allow_headers, "content-type, if-modified-since, Access-Control-Allow-Origin, Authorization"
-set :allow_headers, "*"
-set :expose_headers, "location, link"
-
-
-#headers['Access-Control-Allow-Origin'] = '*'
-#headers['Access-Control-Allow-Methods'] = 'POST, PUT, DELETE, GET, OPTIONS'
-#headers['Access-Control-Request-Method'] = '*'
-#headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
 
 
 #Global variables start with a capital letter
@@ -27,8 +11,8 @@ Message = Struct.new(:name, :msg, :post_time)
 
 before do
   if request.request_method == 'OPTIONS'
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST"
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3006"
+    response.headers["Access-Control-Allow-Methods"] = "POST, GET"
     response.headers["Access-Control-Allow-Headers"] = "origin, x-requested-with, content-type, authorization, accept, access-control-allow-origin"
     puts("Reached options")
     halt 200
@@ -103,4 +87,10 @@ post '/message' do
   message = Message.new(name, msg, Time.now.getutc.to_i)
   puts(message)
   return 201
+end
+
+get '/stream', provides: 'text/event-stream' do
+  stream :keep_open do |out|
+    out << "HEllo"
+  end
 end

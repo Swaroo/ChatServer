@@ -64,6 +64,14 @@ class Board extends React.Component {
     console.log("old token: " + old_state.token);
 
     this.setState({token: old_state.token});
+
+    var es = new EventSource('http://localhost:3000/stream');
+
+    es.onmessage = function(e) {
+      const msg = e.data;
+      console.log(msg)
+      // … do something
+    }
   }
 
 	
