@@ -70,7 +70,7 @@ post '/login' do
   [status,headers,body]
 end
 
-post '/message' do
+post '/message', provides: 'text/event-stream' do
   response['Access-Control-Allow-Origin'] = '*'
   response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
   response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
@@ -95,6 +95,10 @@ post '/message' do
   puts("MessageArray:")
   pp MessageArray
 
+  stream :keep_open do |out|
+    out << "HEllo"
+  end
+
   return 201
 end
 
@@ -102,16 +106,31 @@ get '/stream/:id', provides: 'text/event-stream' do
   response['Access-Control-Allow-Origin'] = '*'
   response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
   response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
+  
+  puts "get /stream"
   stream :keep_open do |out|
-    out << "HEllo"
+    payload = {"data" => "this is some data", event => "Message", id => "1234"}
+    puts payload.to_json
+    out << payload.to_json
   end
 end
 
-get '/stream/:id', provides: 'text/event-stream' do
-  response['Access-Control-Allow-Origin'] = '*'
-  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
-  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
-  stream :keep_open do |out|
-    out << "HEllo"
-  end
-end
+
+#get '/stream/:id', provides: 'text/event-stream' do
+#  response['Access-Control-Allow-Origin'] = 'http://localhost:3006'
+#  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
+#  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
+#  sse = SSE.new(response.stream)
+#  puts "entered get stream"
+#  
+#  begin
+#    Comment.on_change do |data|
+#      sse.write({name: 'Test'}, event: "Message")
+#    end
+#  rescue IOError
+#    # Client Disconnected
+#  ensure
+#    sse.close
+#  end
+#end
+
