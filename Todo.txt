@@ -2,4 +2,6 @@
 
 2> If they hit the /board url directly without logging in, take them to the login page.
 
-3> CORS origin address is hardcoded, create an environment file for that and all other constants.
+3> CORS origin address is hardcoded, create an environment file for that or ask in the beginning and 	store it in sessionStorage.
+
+4> Remove puma from Gemfile.
