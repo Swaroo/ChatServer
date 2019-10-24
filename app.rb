@@ -2,8 +2,12 @@ require 'sinatra'
 require 'digest'
 require 'pp' #Pretty printing ruby objects, just for debugging
 
+
 set :server, :thin
 connections = []
+
+
+
 
 
 
@@ -11,6 +15,7 @@ connections = []
 UserPasswordHash = {}
 UserTokenHash = {}
 Message = Struct.new(:name, :msg, :post_time)
+MessageArray = Array.new
 
 before do
   if request.request_method == 'OPTIONS'
@@ -84,7 +89,22 @@ post '/message' do
   msg = params["message"]
   message = Message.new(name, msg, Time.now.getutc.to_i)
   puts(message)
+
+  MessageArray.push(message)
+  MessageArray.sort!{ |a,b| a[:post_time] <=> b[:post_time]}
+  puts("MessageArray:")
+  pp MessageArray
+
   return 201
+end
+
+get '/stream/:id', provides: 'text/event-stream' do
+  response['Access-Control-Allow-Origin'] = '*'
+  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
+  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
+  stream :keep_open do |out|
+    out << "HEllo"
+  end
 end
 
 get '/stream/:id', provides: 'text/event-stream' do

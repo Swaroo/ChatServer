@@ -11,6 +11,8 @@ class Board extends React.Component {
       message: '',
       token: ''
     };
+
+    this.eventSource = new EventSource("http://localhost:3000/stream/1234")
   }
   // update username in state when keys are typed into login form
   onMessageChange = (event) =>{
@@ -65,6 +67,7 @@ class Board extends React.Component {
 
     this.setState({token: old_state.token});
 
+    
     var es = new EventSource('http://localhost:3000/stream/1234');
 
     es.onmessage = function(e) {
@@ -72,6 +75,12 @@ class Board extends React.Component {
       console.log(msg)
       // … do something
     }
+    
+    /*
+    this.eventSource.addEventListener("http://localhost:3000/stream/1234", e =>
+      console.log(e.data)
+    );
+    */
   }
 
 	
