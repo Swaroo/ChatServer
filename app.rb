@@ -2,6 +2,9 @@ require 'sinatra'
 require 'digest'
 require 'pp' #Pretty printing ruby objects, just for debugging
 
+set :server, :thin
+connections = []
+
 
 
 #Global variables start with a capital letter
