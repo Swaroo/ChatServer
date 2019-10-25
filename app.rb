@@ -64,6 +64,7 @@ post '/login' do
   status = 201
   headers = {"content-type" => "application/json"}
   body = {"token" => digest}.to_json
+
   [status,headers,body]
 end
 
@@ -87,11 +88,9 @@ post '/message', provides: 'text/event-stream' do
   message = Message.new(name, msg, Time.now.getutc.to_i)
   puts(JSON.generate(message.to_h))
 
-  Connections.each {
-      |out| out << "id:1234\n\n"
-    out << "event:\"message\"\n\n"
-    out << "data:"+(JSON.generate(message.to_h))+"\n\n"
-  }
+  Connections.each do |out|
+    out << "event:\"Message\"\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
+  end
 
   MessageArray.push(message)
   MessageArray.sort!{ |a,b| a[:post_time] <=> b[:post_time]}
@@ -107,22 +106,16 @@ get '/stream/:id', provides: 'text/event-stream' do
 
   stream :keep_open do |out|
     Connections << out
+    callJoin(params[:id])
     out.callback { Connections.delete(out) }
-  end
-  
-  #puts "get /stream"
-  #stream :keep_open do |out|
-  #  #payload = {:Data => "this is some data", :Event => "Message", :Id => "1234"}
-  #  #puts payload.to_json
-  #  #out << payload.to_json
-  #  out << "id:1234\n\n"
-  #  out << "event:\"message\"\n\n"
-  #  out << "data:{\"hello\"}\n\n"
-  #end
+  end  
 end
 
-def sendEvent
-
+def callJoin(id)
+  username = UserTokenHash[id]
+  Connections.each do |out|
+      out << "event:\"Join\"\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
+  end
 end
 
 
