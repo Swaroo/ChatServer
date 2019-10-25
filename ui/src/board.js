@@ -2,6 +2,14 @@ import React from 'react'
 import { render } from 'react-dom'
 import axios from 'axios'; // axios seemed like a cool package to do api calls, alternative is fetch
 
+function date_format(timestamp) {
+  var date = new Date(timestamp * 1000);
+  return (
+      date.toLocaleDateString("en-US") +
+      " " +
+      date.toLocaleTimeString("en-US")
+  );
+}
 
 class Board extends React.Component {
   constructor(props){
@@ -69,13 +77,17 @@ class Board extends React.Component {
     console.log("old token: " + old_state.token);
 
     this.setState({token: old_state.token});
-    var eventSource = new EventSource("http://localhost:3000/stream/1234");
+    var eventSource = new EventSource("http://localhost:3000/stream/"+old_state.token);
 
     eventSource.addEventListener(
       "message",
         function(event) {
+          debugger;
             console.log(event.data);
-            debugger;
+            var msg = JSON.parse(event.data);
+            var board_data = document.getElementById('board').value;
+            document.getElementById('board').value = board_data + "\n" + msg["msg"] + " at " 
+            + date_format(msg["post_time"]) + " by "+ msg["name"];
         },
         false
     );
@@ -92,7 +104,7 @@ class Board extends React.Component {
 			<div>
         <h1 align="center" style={{color:'green'}}> CS 291 Class</h1>
         <span>
-        <textarea style={{height:'850px',  width:'70%', overflow:'scroll'}} value="Hello!" onChange={this.onTextChange}></textarea>
+        <textarea id = "board" style={{height:'850px',  width:'70%', overflow:'scroll'}} value="Hello!" onChange={this.onTextChange}></textarea>
         
 
 				<div style={{float:'right', height: '850px', width:'28%'}}>

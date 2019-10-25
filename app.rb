@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'digest'
-require 'pp' #Pretty printing ruby objects, just for debugging
+#require 'pp' #Pretty printing ruby objects, just for debugging
+require 'json'
 
 
 set :server, :thin
@@ -84,18 +85,18 @@ post '/message', provides: 'text/event-stream' do
   end
   msg = params["message"]
   message = Message.new(name, msg, Time.now.getutc.to_i)
-  puts(message)
+  puts(JSON.generate(message.to_h))
 
   Connections.each {
       |out| out << "id:1234\n\n"
     out << "event:\"message\"\n\n"
-    out << "data:{\"hello\"}\n\n"
+    out << "data:"+(JSON.generate(message.to_h))+"\n\n"
   }
 
   MessageArray.push(message)
   MessageArray.sort!{ |a,b| a[:post_time] <=> b[:post_time]}
   puts("MessageArray:")
-  pp MessageArray
+  #pp MessageArray
   return 201
 end
 
