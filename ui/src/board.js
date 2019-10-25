@@ -1,7 +1,6 @@
 import React from 'react'
 import { render } from 'react-dom'
 import axios from 'axios'; // axios seemed like a cool package to do api calls, alternative is fetch
-import ReactTable from "react-table"
 
 
 class Board extends React.Component {
@@ -70,36 +69,13 @@ class Board extends React.Component {
     console.log("old token: " + old_state.token);
 
     this.setState({token: old_state.token});
-    this.eventSource = new EventSource("http://localhost:3000/stream/1234");
-    /*th
-    var es = new EventSource('http://localhost:3000/stream/1234');
+    var eventSource = new EventSource("http://localhost:3000/stream/1234");
 
-    es.onmessage = function(e) {
-      console.log("e:")
-      console.log(e);
-      console.log("message: ");
-      console.log(e.data);
-      // … do something
-    }
-    */
-    
-    this.eventSource.addEventListener(
-      "Message",
+    eventSource.addEventListener(
+      "message",
         function(event) {
-            var data = JSON.parse(event.data);
-            console.log(data);
+            console.log(event.data);
             debugger;
-            /*
-            output(
-                document.createTextNode(
-                    date_format(data["created"]) +
-                        " (" +
-                        data.user +
-                        ") " +
-                        data.message
-                )
-            );
-            */
         },
         false
     );

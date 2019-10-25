@@ -4,11 +4,7 @@ require 'pp' #Pretty printing ruby objects, just for debugging
 
 
 set :server, :thin
-connections = []
-
-
-
-
+Connections = []
 
 
 #Global variables start with a capital letter
@@ -90,15 +86,16 @@ post '/message', provides: 'text/event-stream' do
   message = Message.new(name, msg, Time.now.getutc.to_i)
   puts(message)
 
+  Connections.each {
+      |out| out << "id:1234\n\n"
+    out << "event:\"message\"\n\n"
+    out << "data:{\"hello\"}\n\n"
+  }
+
   MessageArray.push(message)
   MessageArray.sort!{ |a,b| a[:post_time] <=> b[:post_time]}
   puts("MessageArray:")
   pp MessageArray
-
-  stream :keep_open do |out|
-    out << "HEllo"
-  end
-
   return 201
 end
 
@@ -106,13 +103,25 @@ get '/stream/:id', provides: 'text/event-stream' do
   response['Access-Control-Allow-Origin'] = '*'
   response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
   response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
-  
-  puts "get /stream"
+
   stream :keep_open do |out|
-    payload = {"data" => "this is some data", event => "Message", id => "1234"}
-    puts payload.to_json
-    out << payload.to_json
+    Connections << out
+    out.callback { Connections.delete(out) }
   end
+  
+  #puts "get /stream"
+  #stream :keep_open do |out|
+  #  #payload = {:Data => "this is some data", :Event => "Message", :Id => "1234"}
+  #  #puts payload.to_json
+  #  #out << payload.to_json
+  #  out << "id:1234\n\n"
+  #  out << "event:\"message\"\n\n"
+  #  out << "data:{\"hello\"}\n\n"
+  #end
+end
+
+def sendEvent
+
 end
 
 
