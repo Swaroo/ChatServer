@@ -18,7 +18,8 @@ class Board extends React.Component {
     // data that user types in from login form
     this.state = {
       board_data: 'This is default data on board',
-      messages: ["default"],
+      messages: ["Messages"],
+      users: ["Online"],
       columns: "this is a column",
       token: ''
     };
@@ -107,36 +108,20 @@ class Board extends React.Component {
 	
 	render() {
 		return (
-			<div>
+			<div style={{overflow:'hidden'}}>
         <h1 align="center" style={{color:'green'}}> CS 291 Class</h1>
-        <span>
-        <MessageList 
-                  messages={this.state.messages} />
+        <div style={{display:'flex', flexDirection:'column', height:'70em', overflow:'hidden' }} >
+          <div style={{display:'flex', flexDirection:'row'}} >
+          <MessageList style={{ height:'60em',  width:'70%', overflow:'scroll', marginBottom: '0.5em'}}
+              messages={this.state.messages} />
         
+          <MessageList style={{  height:'60em',  width:'20%', overflow:'scroll'}}
+              messages={this.state.users} />
 
-				<div style={{float:'right', height: '850px', width:'28%'}}>
-          <table>
-            <thead style={{fontWeight:'bold'}}>
-              <tr>
-                <th>Online</th>
-              </tr>
-            </thead>
-            <tbody style={{fontWeight:'light'}}>
-              <tr>
-                <th>Jill</th>
-              </tr>
-              <tr>
-                <th>Eve</th>
-              </tr>
-            </tbody>
-            
-          </table>
+          </div>
+
+          <input style={{margin:'60em 0em', height: '30px', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
         </div>
-
-        </span>
-
-        <input style={{height: '30px', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
-
       </div>
     )
   }
@@ -145,10 +130,10 @@ class Board extends React.Component {
 class MessageList extends React.Component {
   render() {
       return (
-          <ul className="message-list">
+          <ul>
               {this.props.messages.map((message) => {
                   return (
-                    <ul className="message">
+                    <ul>
                       <div>{message}</div>
                     </ul>
                   )
