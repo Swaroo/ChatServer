@@ -11,7 +11,7 @@ Connections = []
 #Global variables start with a capital letter
 UserPasswordHash = {}
 UserTokenHash = {}
-Message = Struct.new(:name, :msg, :post_time)
+Message = Struct.new(:user, :message, :created)
 MessageArray = Array.new
 
 before do
@@ -89,11 +89,11 @@ post '/message', provides: 'text/event-stream' do
   puts(JSON.generate(message.to_h))
 
   Connections.each do |out|
-    out << "event:\"Message\"\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
+    out << "event:Message\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
   end
 
   MessageArray.push(message)
-  MessageArray.sort!{ |a,b| a[:post_time] <=> b[:post_time]}
+  MessageArray.sort!{ |a,b| a[:created] <=> b[:created]}
   puts("MessageArray:")
   #pp MessageArray
   return 201
@@ -114,7 +114,7 @@ end
 def callJoin(id)
   username = UserTokenHash[id]
   Connections.each do |out|
-      out << "event:\"Join\"\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
+      out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
   end
 end
 

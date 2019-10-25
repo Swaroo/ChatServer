@@ -84,13 +84,13 @@ class Board extends React.Component {
     let my = this;
 
     eventSource.addEventListener(
-      "join",
+      "Join",
         (event) => {
             debugger;
             console.log(event.data);
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
-            var post = date_format(msg["post_time"]) + " : Make some noise for " + msg["user"] + "." 
+            var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
             my.setState({
               messages: [...my.state.messages, post]
             })
@@ -99,14 +99,13 @@ class Board extends React.Component {
     );
     
     eventSource.addEventListener(
-      "message",
+      "Message",
         (event) => {
             debugger;
             console.log(event.data);
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
-            var post = msg["msg"] + " at " 
-            + date_format(msg["post_time"]) + " by "+ msg["name"];
+            var post = date_format(msg["created"]) + " : " + msg["user"] + " SAYS -> " +msg["message"];
             my.setState({
               messages: [...my.state.messages, post]
             })
