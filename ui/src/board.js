@@ -108,21 +108,20 @@ class Board extends React.Component {
 	
 	render() {
 		return (
-			<div style={{overflow:'hidden'}}>
-        <h1 align="center" style={{color:'green'}}> CS 291 Class</h1>
-        <div style={{display:'flex', flexDirection:'column', height:'70em', overflow:'hidden' }} >
-          <div style={{display:'flex', flexDirection:'row'}} >
-          <MessageList style={{ height:'60em',  width:'70%', overflow:'scroll', marginBottom: '0.5em'}}
-              messages={this.state.messages} />
-        
-          <MessageList style={{  height:'60em',  width:'20%', overflow:'scroll'}}
-              messages={this.state.users} />
+		
+        <section style={{display:'flex', flexDirection:'column', height:'90vh', overflow: 'hidden'}}>
+          <h1 align="center" style={{color:'green'}}> CS 291 Class</h1>
+          <div style={{display: 'flex', flex: '1', margin: '0.5em 0.5em 0 0.5em', minHeight: '0'}} >
+            <MessageList style={{ height:'100%',  width:'10em', overflow:'scroll', margin: '0 0.5em 0.5em 0.5em', minHeight: '2em'}}
+                messages={this.state.messages} />
+          
+            <MessageList style={{  height:'100%',  width:'20%', overflow:'scroll', marginBottom: '0.5em'}}
+                messages={this.state.users} />
 
           </div>
 
-          <input style={{margin:'60em 0em', height: '30px', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
-        </div>
-      </div>
+          <input style={{margin:'80vh 0vh', height: '5vh', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
+        </section>
     )
   }
 }
@@ -130,7 +129,7 @@ class Board extends React.Component {
 class MessageList extends React.Component {
   render() {
       return (
-          <ul>
+          <ul >
               {this.props.messages.map((message) => {
                   return (
                     <ul>
