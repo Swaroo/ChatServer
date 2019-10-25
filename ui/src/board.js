@@ -18,7 +18,7 @@ class Board extends React.Component {
     // data that user types in from login form
     this.state = {
       board_data: 'This is default data on board',
-      out_message: '',
+      messages: ["default"],
       columns: "this is a column",
       token: ''
     };
@@ -79,15 +79,21 @@ class Board extends React.Component {
     this.setState({token: old_state.token});
     var eventSource = new EventSource("http://localhost:3000/stream/"+old_state.token);
 
+
+    let my = this;
+
     eventSource.addEventListener(
       "message",
         function(event) {
-          debugger;
+          //debugger;
             console.log(event.data);
             var msg = JSON.parse(event.data);
-            var board_data = document.getElementById('board').value;
-            document.getElementById('board').value = board_data + "\n" + msg["msg"] + " at " 
+            //var board_data = document.getElementById('board').value;
+            var post = msg["msg"] + " at " 
             + date_format(msg["post_time"]) + " by "+ msg["name"];
+            my.setState({
+              messages: [...my.state.messages, post]
+            })
         },
         false
     );
@@ -104,7 +110,8 @@ class Board extends React.Component {
 			<div>
         <h1 align="center" style={{color:'green'}}> CS 291 Class</h1>
         <span>
-        <textarea id = "board" style={{height:'850px',  width:'70%', overflow:'scroll'}} value="Hello!" onChange={this.onTextChange}></textarea>
+        <MessageList 
+                  messages={this.state.messages} />
         
 
 				<div style={{float:'right', height: '850px', width:'28%'}}>
@@ -134,5 +141,22 @@ class Board extends React.Component {
     )
   }
 }
+
+class MessageList extends React.Component {
+  render() {
+      return (
+          <ul className="message-list">
+              {this.props.messages.map((message) => {
+                  return (
+                    <ul className="message">
+                      <div>{message}</div>
+                    </ul>
+                  )
+              })}
+          </ul>
+      )
+  }
+}
+
 //<input style={{height: '30px', width:'100%'}} type="text" value={this.state.message} onChange={this.onMessageChange} required/>
 export default Board
