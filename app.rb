@@ -120,9 +120,19 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
       out << "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
       #Above line - Broken, needs fixing,Not calling the js eventListener 
       Connections.delete(out)
+      puts "#{username} left"
+      OnlineUsers.delete(username)
+      callPart(username)
+      
       puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
     end
   end  
+end
+
+def callPart(username)
+  Connections.each do |out|
+    out << "event:Part\n" + "data: " + (JSON.generate(username)) + "\n\n"
+  end
 end
 
 def callJoin(id)
