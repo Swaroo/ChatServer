@@ -84,9 +84,32 @@ class Board extends React.Component {
     let my = this;
 
     eventSource.addEventListener(
+      "Users",
+        (event) => {
+            console.log("Users");
+            var msg = JSON.parse(event.data);
+            console.log(msg);
+            
+            //var board_data = document.getElementById('board').value;
+            //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
+
+            my.setState({
+              users: ["Online"]
+            });
+            var i = 0;
+            for (; i < msg.length; i++){
+              my.setState({
+                users: [...my.state.users, msg[i]]
+              });
+            }
+        },
+        false
+    );
+
+    eventSource.addEventListener(
       "Join",
         (event) => {
-            debugger;
+            console.log("Join");
             console.log(event.data);
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
@@ -101,7 +124,7 @@ class Board extends React.Component {
     eventSource.addEventListener(
       "Message",
         (event) => {
-            debugger;
+            console.log("Message");
             console.log(event.data);
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;

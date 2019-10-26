@@ -13,6 +13,7 @@ UserPasswordHash = {}
 UserTokenHash = {}
 Message = Struct.new(:user, :message, :created)
 MessageArray = Array.new
+OnlineUsers = Array.new
 
 before do
   if request.request_method == 'OPTIONS'
@@ -99,15 +100,35 @@ post '/message', provides: 'text/event-stream' do
   return 201
 end
 
-get '/stream/:id', provides: 'text/event-stream' do
+get '/stream/:id', provides: 'text/event-stream' do |token|
   response['Access-Control-Allow-Origin'] = '*'
   response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
   response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
 
+  puts "token:"
+  pp token
+
+  username = UserTokenHash[token]
+  puts "username:"
+  pp username
+
+  # return 403 if token is not valid (no username)
+  if username.nil?
+    status 403
+    return
+  end
+
+  OnlineUsers.push(username)
+
   stream :keep_open do |out|
+    #out << "event:\"Users\"\n\n" + "data:{\"hello\"}\n\n"
     Connections << out
+    out << "event:Users\n" + "data:" + (JSON.generate(OnlineUsers)) + "\n\n"
     callJoin(params[:id])
-    out.callback { Connections.delete(out) }
+    out.callback do
+      Connections.delete(out)
+      puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
+    end
   end  
 end
 
@@ -117,6 +138,9 @@ def callJoin(id)
       out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
   end
 end
+
+
+
 
 
 #get '/stream/:id', provides: 'text/event-stream' do
