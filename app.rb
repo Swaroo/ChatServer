@@ -2,6 +2,7 @@ require 'sinatra'
 require 'digest'
 #require 'pp' #Pretty printing ruby objects, just for debugging
 require 'json'
+require 'sinatra/sse'
 
 
 set :server, :thin
@@ -108,30 +109,33 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
     status 403
     return
   end
+ 
 
   OnlineUsers.push(username)
 
   stream :keep_open do |out|
+    
     Connections << out
     out << "event:Users\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
     callJoin(params[:id])
     out.callback do   
       # Need to check here whether to send Disconnect or part message needs to be send   
-      out << "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
-      #Above line - Broken, needs fixing,Not calling the js eventListener 
-      Connections.delete(out)
       puts "#{username} left"
+      #stream "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
       OnlineUsers.delete(username)
+      Connections.delete(out)
       callPart(username)
-      
+      #out << "event:Part\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
       puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
     end
   end  
 end
 
 def callPart(username)
-  Connections.each do |out|
-    out << "event:Part\n" + "data: " + (JSON.generate(username)) + "\n\n"
+  part_thread = Thread.new do
+    Connections.each do |out|
+      out << "event:Part\n" + "data: " + (JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i})) + "\n\n"
+    end
   end
 end
 

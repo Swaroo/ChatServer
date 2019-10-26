@@ -71,6 +71,8 @@ class Board extends React.Component {
     this.setState({out_message: event.target.value})
   }
 
+  
+
   componentDidMount() {
     var old_state = this.props.location.state;
     console.log("old state: ");
@@ -94,19 +96,44 @@ class Board extends React.Component {
             console.log("Part");
             var msg = JSON.parse(event.data);
             console.log(msg);
-            
+            var parted_user = msg["user"]
+            console.log(parted_user);
             //var board_data = document.getElementById('board').value;
             //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
 
-            my.setState({
-              users: ["Online"]
-            });
+            
+            
+            /*
             var i = 0;
             for (; i < msg.length; i++){
+              
               my.setState({
                 users: [...my.state.users, msg[i]]
               });
             }
+            */
+
+           /*
+           var array = [...my.state.users]; // make a separate copy of the array
+           my.setState({
+            users: []
+           });
+           var i = 0;
+           for (; i < array.length; i++){
+             if (array[i] != parted_user){
+              my.setState({
+                users: [...my.state.users, array[i]]
+              });
+             }
+           }
+           */
+          my.setState({users: my.state.users.filter(function(user) { 
+            return user !== parted_user
+        })});
+           
+
+            console.log("my users:");
+            console.log(my.state.users);
         },
         false
     );
