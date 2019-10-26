@@ -85,7 +85,30 @@ class Board extends React.Component {
 
     eventSource.onerror   = function(event) {
       console.log("Connection error", event) 
-  }
+    }
+
+    eventSource.addEventListener(
+      "Part",
+        (event) => {
+            console.log("Part");
+            var msg = JSON.parse(event.data);
+            console.log(msg);
+            
+            //var board_data = document.getElementById('board').value;
+            //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
+
+            my.setState({
+              users: ["Online"]
+            });
+            var i = 0;
+            for (; i < msg.length; i++){
+              my.setState({
+                users: [...my.state.users, msg[i]]
+              });
+            }
+        },
+        false
+    );
 
     eventSource.addEventListener(
       "Users",
