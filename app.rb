@@ -27,7 +27,7 @@ end
 
 post '/login' do
   response['Access-Control-Allow-Origin'] = '*'
-  
+
   if params["password"].nil? || params["username"].nil?
     return 422
   elsif params["password"] == "" || params["username"] == ""
@@ -134,14 +134,14 @@ def callPart(username)
 end
 
 def callJoin(id)
-  if (!$HeartBeatStarted)
-    $HeartBeatStarted = true
-    StartHeartBeat()
-  end
   username = UserTokenHash[id]
   Connections.each do |out|
       out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
   end
+  if (!$HeartBeatStarted)
+    $HeartBeatStarted = true
+    StartHeartBeat()
+  end  
 end
 
 def StartHeartBeat()
