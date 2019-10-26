@@ -6,7 +6,7 @@ require 'sinatra/sse'
 
 
 set :server, :thin
-Connections = []
+Connections = {}
 
 
 #Global variables start with a capital letter
@@ -81,7 +81,7 @@ post '/message', provides: 'text/event-stream' do
   message = Message.new(name, msg, Time.now.getutc.to_i)
   puts(JSON.generate(message.to_h))
 
-  Connections.each do |out|
+  Connections.each do |user, out|
     out << "event:Message\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
   end
 
@@ -109,31 +109,33 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
     status 403
     return
   end
- 
-
-  OnlineUsers.push(username)
 
   stream :keep_open do |out|
-    
-    Connections << out
-    out << "event:Users\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
-    callJoin(params[:id])
+    if Connections.key?(username)
+      callDisconnect(username)
+      Connections[username] = out
+    else 
+      OnlineUsers.push(username)
+      Connections[username] = out
+      out << "event:Users\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
+      callJoin(params[:id])
+    end
     out.callback do   
       # Need to check here whether to send Disconnect or part message needs to be send   
       puts "#{username} left"
       #stream "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
       OnlineUsers.delete(username)
-      Connections.delete(out)
+      Connections.delete(username)
       callPart(username)
       #out << "event:Part\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
       puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
     end
-  end  
+  end
 end
 
 def callPart(username)
   part_thread = Thread.new do
-    Connections.each do |out|
+    Connections.each do |user, out|
       out << "event:Part\n" + "data: " + (JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i})) + "\n\n"
     end
   end
@@ -141,7 +143,7 @@ end
 
 def callJoin(id)
   username = UserTokenHash[id]
-  Connections.each do |out|
+  Connections.each do |user, out|
       out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
   end
   if (!$HeartBeatStarted)
@@ -150,11 +152,17 @@ def callJoin(id)
   end  
 end
 
+def callDisconnect(username)
+  out = Connections[username]
+  out << "event:Disconnect\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
+
+end
+
 def StartHeartBeat()
   heartbeat = Thread.new do
     loop do
       sleep 30
-      Connections.each do |out|
+      Connections.each do |user, out|
         out << "event:HeartBeat\n" + "data:Just keeping you alive man.\n\n"
       end
     end

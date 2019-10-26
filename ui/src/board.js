@@ -73,11 +73,19 @@ class Board extends React.Component {
 
   
 
-  componentDidMount() {
+  componentWillMount() {
     var old_state = this.props.location.state;
-    console.log("old state: ");
-    console.log(old_state);
-    console.log("old token: " + old_state.token);
+    if (old_state === void(0)){
+      console.log("old_state is undefined");
+      this.props.history.push({pathname: '/', state: {}})
+      return
+    }
+    else{
+      console.log("old state: ");
+      console.log(old_state);
+      console.log("old token: " + old_state.token);
+    }
+    
 
     this.setState({token: old_state.token});
     var eventSource = new EventSource("http://localhost:3000/stream/"+old_state.token);
@@ -190,6 +198,7 @@ class Board extends React.Component {
         (event) => {
           console.log("Stream disconnected", event) 
           eventSource.close();
+          my.props.history.push({pathname: '/', state: {}})
         },
         false
     );
