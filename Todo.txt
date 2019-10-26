@@ -1,7 +1,30 @@
-1> Change password textbox type from text to password
+MAJOR
 
-2> If they hit the /board url directly without logging in, take them to the login page.
+    1> Store an event history array or hash, and push to it whenever any 'broadcast' event occurs.
 
-3> CORS origin address is hardcoded, create an environment file for that or ask in the beginning and 	store it in sessionStorage.
+    2> Send the entire event history to newly logged in history.
 
-4> Remove puma from Gemfile.
+    3> Send a unique id in each of the sse (Check specification in website).
+
+    4> Determine PART or DISCONNECT SSE in out.callback and send the appropriate event.
+        (Refer to : https://piazza.com/class/k04cpuvtxtg42m?cid=147)
+
+    5> Server Status message initially.
+
+    6> A user who is reestablishing its connection (retry after failure) should receive all of the messages in the history that have occurred since the provided last_event_id.
+
+    7> Improve UI.
+
+    8> Deploy Front end to Github pages.
+
+    9> Push docker image to google cloud or docker hub.
+
+MINOR
+
+    1> Change password textbox type from text to password
+
+    2> If they hit the /board url directly without logging in, take them to the login page.
+
+    3> CORS origin address is hardcoded, create an environment file for that or ask in the beginning and store it in sessionStorage.
+
+    4> Remove puma from Gemfile.
