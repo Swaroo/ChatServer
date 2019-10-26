@@ -85,6 +85,7 @@ class Board extends React.Component {
 
     eventSource.onerror   = function(event) {
       console.log("Connection error", event) 
+      eventSource.close();
   }
 
     eventSource.addEventListener(
@@ -92,7 +93,8 @@ class Board extends React.Component {
         (event) => {
             console.log("Users");
             var msg = JSON.parse(event.data);
-            console.log(msg);
+            var onlineUsers = msg["users"]
+            console.log(onlineUsers);
             
             //var board_data = document.getElementById('board').value;
             //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
@@ -101,9 +103,9 @@ class Board extends React.Component {
               users: ["Online"]
             });
             var i = 0;
-            for (; i < msg.length; i++){
+            for (; i < onlineUsers.length; i++){
               my.setState({
-                users: [...my.state.users, msg[i]]
+                users: [...my.state.users, onlineUsers[i]]
               });
             }
         },
@@ -132,6 +134,15 @@ class Board extends React.Component {
         },
         false
     );
+
+    eventSource.addEventListener(
+      "Disconnect",
+        (event) => {
+          console.log("Stream disconnected", event) 
+          eventSource.close();
+        },
+        false
+    );
     
     eventSource.addEventListener(
       "Message",
@@ -146,13 +157,7 @@ class Board extends React.Component {
             })
         },
         false
-    );
-
-    
-
-
-
-    
+    );    
   }
 
   //<ReactTable data={this.state.board_data} columns={this.state.columns} />

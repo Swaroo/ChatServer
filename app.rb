@@ -112,11 +112,13 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
   OnlineUsers.push(username)
 
   stream :keep_open do |out|
-    #out << "event:\"Users\"\n\n" + "data:{\"hello\"}\n\n"
     Connections << out
-    out << "event:Users\n" + "data:" + (JSON.generate(OnlineUsers)) + "\n\n"
+    out << "event:Users\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
     callJoin(params[:id])
-    out.callback do
+    out.callback do   
+      # Need to check here whether to send Disconnect or part message needs to be send   
+      out << "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
+      #Above line - Broken, needs fixing,Not calling the js eventListener 
       Connections.delete(out)
       puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
     end
