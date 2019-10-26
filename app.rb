@@ -14,29 +14,20 @@ UserTokenHash = {}
 Message = Struct.new(:user, :message, :created)
 MessageArray = Array.new
 OnlineUsers = Array.new
+$HeartBeatStarted = false
 
 before do
   if request.request_method == 'OPTIONS'
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Methods"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "*"
-    puts("Reached options")
     halt 200
   end
 end
 
-# Added this just for testing
-get '/' do
-  status 200
-end
-
 post '/login' do
   response['Access-Control-Allow-Origin'] = '*'
-  puts "post/login"
-
-  puts params.to_s
-
-
+  
   if params["password"].nil? || params["username"].nil?
     return 422
   elsif params["password"] == "" || params["username"] == ""
@@ -133,10 +124,26 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
 end
 
 def callJoin(id)
+  if (!$HeartBeatStarted)
+    $HeartBeatStarted = true
+    StartHeartBeat()
+  end
   username = UserTokenHash[id]
   Connections.each do |out|
       out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
   end
+end
+
+def StartHeartBeat()
+  heartbeat = Thread.new do
+    loop do
+      sleep 30
+      Connections.each do |out|
+        out << "event:HeartBeat\n" + "data:Just keeping you alive man.\n\n"
+      end
+    end
+  end
+  heartbeat.join  
 end
 
 

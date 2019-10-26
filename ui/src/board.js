@@ -83,6 +83,10 @@ class Board extends React.Component {
 
     let my = this;
 
+    eventSource.onerror   = function(event) {
+      console.log("Connection error", event) 
+  }
+
     eventSource.addEventListener(
       "Users",
         (event) => {
@@ -117,6 +121,14 @@ class Board extends React.Component {
             my.setState({
               messages: [...my.state.messages, post]
             })
+        },
+        false
+    );
+
+    eventSource.addEventListener(
+      "HeartBeat",
+        (event) => {
+            console.log(event.data);
         },
         false
     );
