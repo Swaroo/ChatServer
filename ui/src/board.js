@@ -110,6 +110,11 @@ class Board extends React.Component {
             my.setState({users: my.state.users.filter(function(user) { 
               return user !== parted_user
             })});
+
+            var post = date_format(msg["created"]) + " : PART : " + msg["user"] + "." 
+            my.setState({
+              messages: [...my.state.messages, post]
+            })
            
 
             console.log("my users:");

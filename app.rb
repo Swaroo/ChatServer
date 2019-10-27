@@ -179,24 +179,30 @@ end
 
 def callPart(username)
   part_thread = Thread.new do
+    
+    part_event = Part.new(username, Time.now.getutc.to_i)
+    EventHistory.push(part_event)
+    EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
     # send Part event to remaining users
     Connections.each do |user, out|
-      part_event = Part.new(username, Time.now.getutc.to_i)
       out << "event:Part\n" + "data: " + (JSON.generate(part_event.to_h)) + "\n\n"
-      #EventHistory.push(part_event)
-      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
     end
   end
 end
 
 def callJoin(id)
   username = UserTokenHash[id]
-    # send Join event to all users
+    
+  join_event = Join.new(username, Time.now.getutc.to_i)
+  EventHistory.push(join_event)
+  EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+  
+  # send Join event to all users
   Connections.each do |user, out|
-      join_event = Join.new(username, Time.now.getutc.to_i)
+      
       out << "event:Join\n" + "data:"+(JSON.generate(join_event.to_h))+"\n\n"
-      #EventHistory.push(join_event)
-      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+      
 
   end
   if (!$HeartBeatStarted)
@@ -243,13 +249,14 @@ end
 
 def sendEventHistory(out)
   EventHistory.each do |event|
-    test_condition = event.dig(:message)
-    print("dig message:")
-    pp test_condition
-    if test_condition.nil?
-      out << "event:ServerStatus\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
-    else
+    if event.is_a?(Message)
       out << "event:Message\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+    elsif event.is_a?(ServerStatus)
+      out << "event:ServerStatus\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+    elsif event.is_a?(Part)
+      out << "event:Part\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+    elsif event.is_a?(Join)
+      out << "event:Join\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
     end
   end
 end
