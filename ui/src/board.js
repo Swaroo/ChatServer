@@ -111,7 +111,7 @@ class Board extends React.Component {
               return user !== parted_user
             })});
 
-            var post = date_format(msg["created"]) + " : PART : " + msg["user"] + "." 
+            var post = date_format(msg["created"]) + " : " + msg["user"] + "got bored and left the chat." 
             my.setState({
               messages: [...my.state.messages, post]
             })
@@ -199,7 +199,7 @@ class Board extends React.Component {
             console.log(event.data);
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
-            var post = date_format(msg["created"]) + " STATUS: " + msg["status"];
+            var post = date_format(msg["created"]) + " STATUS: " + msg["status"] + ". Do you know even see my messages, huh?";
             my.setState({
               messages: [...my.state.messages, post]
             })
@@ -224,7 +224,7 @@ class Board extends React.Component {
 
           </div>
 
-          <input style={{margin:'80vh 0vh', height: '5vh', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
+          <input style={{margin:'80vh 0vh', height: '20vh', width:'100%'}} type="text" value={this.state.out_message} onChange={this.onMessageChange} onKeyDown={this.onKeyDown} required/>
         </section>
     )
   }

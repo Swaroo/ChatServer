@@ -1,9 +1,9 @@
 require 'sinatra'
 require 'digest'
-#require 'pp' #Pretty printing ruby objects, just for debugging
+require 'pp' #Pretty printing ruby objects, just for debugging
 require 'json'
 require 'sinatra/sse'
-
+require 'securerandom'
 
 set :server, :thin
 Connections = {}
@@ -19,7 +19,7 @@ Part = Struct.new(:user, :created)
 ServerStatus = Struct.new(:status, :created)
 Users = Struct.new(:created, :users)
 
-EventHistory = Array.new
+EventHistory = {}
 
 OnlineUsers = Array.new
 $HeartBeatStarted = false
@@ -27,7 +27,8 @@ $HeartBeatStarted = false
 
 # first event is always a server status
 initial_server_status = ServerStatus.new("Server was initialized", Time.now.getutc.to_i)
-EventHistory.push(initial_server_status)
+eventId = SecureRandom.hex
+EventHistory[eventId] = "id:"+eventId+"\nevent:ServerStatus\n" + "data: " + (JSON.generate(initial_server_status.to_h)) + "\n\n"
 
 # send new event every hour
 status_thread = Thread.new do
@@ -74,8 +75,6 @@ post '/login' do
   #Now send a token back to user
   digest = Digest::SHA256.hexdigest(username+ "|"+ password)
   UserTokenHash[digest] = username
-  print UserPasswordHash
-  print UserTokenHash
   status = 201
   headers = {"content-type" => "application/json"}
   body = {"token" => digest}.to_json
@@ -101,14 +100,17 @@ post '/message', provides: 'text/event-stream' do
   end
   msg = params["message"]
   message = Message.new(name, msg, Time.now.getutc.to_i)
-  puts(JSON.generate(message.to_h))
+
+  eventId = SecureRandom.hex
+  payload = "id:"+eventId+"\nevent:Message\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
+  EventHistory[eventId] = payload
 
   Connections.each do |user, out|
-    out << "event:Message\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
-  end
-
-  EventHistory.push(message)
-  EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+    out << payload
+  end  
+  
+  # EventHistory.push(message)
+  # EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
 
   while (EventHistory.length > 100)
     EventHistory.shift()
@@ -127,11 +129,17 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
 
   username = UserTokenHash[token]
   puts "username:"
-  pp username
+  pp username  
 
   # return 403 if token is not valid (no username)
   if username.nil?
     status 403
+    return
+  end
+
+  # If http_last_event_id is present, the client lost the connection and retrying again, send the events that they missed
+  if !(request.env['HTTP_LAST_EVENT_ID'].nil?)
+    sendRemainingEvents(request.env['HTTP_LAST_EVENT_ID'], username)
     return
   end
 
@@ -144,7 +152,7 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
       Connections[username] = out
 
       users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
-      out << "event:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+      out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
       sendEventHistory(out)
     else 
       # store username in array and connections hash
@@ -153,7 +161,7 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
 
       # send Users event
       users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
-      out << "event:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+      out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
 
       #EventHistory.push(users_event)
       #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
@@ -162,8 +170,6 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
       # Send Join event on self (only first time)
       callJoin(params[:id])
     end
-    
-  
 
     # when client disconnects, remove from list of users and connections hash
     out.callback do   
@@ -181,12 +187,16 @@ def callPart(username)
   part_thread = Thread.new do
     
     part_event = Part.new(username, Time.now.getutc.to_i)
-    EventHistory.push(part_event)
-    EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+    # EventHistory.push(part_event)
+    # EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+    eventId = SecureRandom.hex
+    payload = "id:"+eventId+"\nevent:Part\n" + "data:"+(JSON.generate(part_event.to_h))+"\n\n"
+    EventHistory[eventId] = payload
 
     # send Part event to remaining users
     Connections.each do |user, out|
-      out << "event:Part\n" + "data: " + (JSON.generate(part_event.to_h)) + "\n\n"
+      out << payload
     end
   end
 end
@@ -195,16 +205,18 @@ def callJoin(id)
   username = UserTokenHash[id]
     
   join_event = Join.new(username, Time.now.getutc.to_i)
-  EventHistory.push(join_event)
-  EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+  # EventHistory.push(join_event)
+  # EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+  eventId = SecureRandom.hex
+  payload = "id:"+eventId+"\nevent:Join\n" + "data:"+(JSON.generate(join_event.to_h))+"\n\n"
+  EventHistory[eventId] = payload
   
   # send Join event to all users
-  Connections.each do |user, out|
-      
-      out << "event:Join\n" + "data:"+(JSON.generate(join_event.to_h))+"\n\n"
-      
-
+  Connections.each do |user, out|      
+      out << payload
   end
+
   if (!$HeartBeatStarted)
     $HeartBeatStarted = true
     StartHeartBeat()
@@ -217,7 +229,7 @@ def callDisconnect(username)
 
   # force logged in user to disconnect first instance
   disconnect_event = Disconnect.new(Time.now.getutc.to_i)
-  out << "event:Disconnect\n" + "data:"+(JSON.generate(disconnect_event.to_h))+"\n\n"
+  out << "id:"+SecureRandom.hex+"\nevent:Disconnect\n" + "data:"+(JSON.generate(disconnect_event.to_h))+"\n\n"
 end
 
 def StartHeartBeat()
@@ -236,27 +248,43 @@ def callServerStatus(hours_alive)
     # send ServerStatus to 
     puts "call server status"
     status_event = ServerStatus.new("Server uptime: " + hours_alive.to_s + "hours", Time.now.getutc.to_i)
-    EventHistory.push(status_event)
-    EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+    # EventHistory.push(status_event)
+    # EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+    eventId = SecureRandom.hex
+    payload = "id:"+eventId+"\nevent:ServerStatus\n" + "data:"+(JSON.generate(status_event.to_h))+"\n\n"
+    EventHistory[eventId] = payload
 
     while EventHistory.length > 100
       EventHistory.shift()
     end
+
     Connections.each do |user, out|
-      out << "event:ServerStatus\n" + "data: " + (JSON.generate(status_event.to_h)) + "\n\n"
+      out << payload
     end
 end
 
 def sendEventHistory(out)
-  EventHistory.each do |event|
-    if event.is_a?(Message)
-      out << "event:Message\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
-    elsif event.is_a?(ServerStatus)
-      out << "event:ServerStatus\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
-    elsif event.is_a?(Part)
-      out << "event:Part\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
-    elsif event.is_a?(Join)
-      out << "event:Join\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+  EventHistory.each do |key, value|
+    out << value
+  end
+end
+
+def sendRemainingEvents(id, username)
+  puts "Username - ",username
+  puts "Event Id - ", id
+  puts "Event History - "
+  pp EventHistory
+  puts "Connections - "
+  puts Connections
+  found = false
+  EventHistory.each do |key, value|
+    if found || id == key
+      if id == key
+        found = true
+      else
+        Connections[username] << value
+      end
     end
   end
 end
