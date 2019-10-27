@@ -12,10 +12,32 @@ Connections = {}
 #Global variables start with a capital letter
 UserPasswordHash = {}
 UserTokenHash = {}
+Disconnect = Struct.new(:created)
+Join = Struct.new(:user, :created)
 Message = Struct.new(:user, :message, :created)
-MessageArray = Array.new
+Part = Struct.new(:user, :created)
+ServerStatus = Struct.new(:status, :created)
+Users = Struct.new(:created, :users)
+
+EventHistory = Array.new
+
 OnlineUsers = Array.new
 $HeartBeatStarted = false
+
+
+# first event is always a server status
+initial_server_status = ServerStatus.new("Server was initialized", Time.now.getutc.to_i)
+EventHistory.push(initial_server_status)
+
+# send new event every hour
+status_thread = Thread.new do
+  hours_alive = 0
+  while(1)
+    sleep 3600 #try 10 for debugging
+    hours_alive += 1
+    callServerStatus(hours_alive)
+  end
+end
 
 before do
   if request.request_method == 'OPTIONS'
@@ -85,10 +107,13 @@ post '/message', provides: 'text/event-stream' do
     out << "event:Message\n" + "data:"+(JSON.generate(message.to_h))+"\n\n"
   end
 
-  MessageArray.push(message)
-  MessageArray.sort!{ |a,b| a[:created] <=> b[:created]}
-  puts("MessageArray:")
-  #pp MessageArray
+  EventHistory.push(message)
+  EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+  while (EventHistory.length > 100)
+    EventHistory.shift()
+  end
+
   return 201
 end
 
@@ -111,23 +136,42 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
   end
 
   stream :keep_open do |out|
+    # If user already logged in, disconnect first connection. Send event history to 2nd connection
     if Connections.key?(username)
       callDisconnect(username)
+
+      #update Connections hash with new output stream
       Connections[username] = out
+
+      users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
+      out << "event:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+      sendEventHistory(out)
     else 
+      # store username in array and connections hash
       OnlineUsers.push(username)
       Connections[username] = out
-      out << "event:Users\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
+
+      # send Users event
+      users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
+      out << "event:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+
+      #EventHistory.push(users_event)
+      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+      sendEventHistory(out)
+      # Send Join event on self (only first time)
       callJoin(params[:id])
     end
+    
+  
+
+    # when client disconnects, remove from list of users and connections hash
     out.callback do   
-      # Need to check here whether to send Disconnect or part message needs to be send   
       puts "#{username} left"
-      #stream "event:Disconnect\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i})) + "\n\n" 
       OnlineUsers.delete(username)
-      Connections.delete(username)
+      Connections.delete(username) # remove first so Part is not sent to self
+      # send Part event
       callPart(username)
-      #out << "event:Part\n" + "data:" + (JSON.generate({"created"=>Time.now.getutc.to_i,"users"=>OnlineUsers})) + "\n\n"
       puts "Stream closed from #{request.ip} (now #{Connections.size} open)"
     end
   end
@@ -135,16 +179,25 @@ end
 
 def callPart(username)
   part_thread = Thread.new do
+    # send Part event to remaining users
     Connections.each do |user, out|
-      out << "event:Part\n" + "data: " + (JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i})) + "\n\n"
+      part_event = Part.new(username, Time.now.getutc.to_i)
+      out << "event:Part\n" + "data: " + (JSON.generate(part_event.to_h)) + "\n\n"
+      #EventHistory.push(part_event)
+      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
     end
   end
 end
 
 def callJoin(id)
   username = UserTokenHash[id]
+    # send Join event to all users
   Connections.each do |user, out|
-      out << "event:Join\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
+      join_event = Join.new(username, Time.now.getutc.to_i)
+      out << "event:Join\n" + "data:"+(JSON.generate(join_event.to_h))+"\n\n"
+      #EventHistory.push(join_event)
+      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
   end
   if (!$HeartBeatStarted)
     $HeartBeatStarted = true
@@ -153,9 +206,12 @@ def callJoin(id)
 end
 
 def callDisconnect(username)
+  # get output stream corresponding to logged in user
   out = Connections[username]
-  out << "event:Disconnect\n" + "data:"+(JSON.generate({"user"=>username,"created"=>Time.now.getutc.to_i}))+"\n\n"
 
+  # force logged in user to disconnect first instance
+  disconnect_event = Disconnect.new(Time.now.getutc.to_i)
+  out << "event:Disconnect\n" + "data:"+(JSON.generate(disconnect_event.to_h))+"\n\n"
 end
 
 def StartHeartBeat()
@@ -170,25 +226,35 @@ def StartHeartBeat()
   heartbeat.join  
 end
 
+def callServerStatus(hours_alive)
+    # send ServerStatus to 
+    puts "call server status"
+    status_event = ServerStatus.new("Server uptime: " + hours_alive.to_s + "hours", Time.now.getutc.to_i)
+    EventHistory.push(status_event)
+    EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+    while EventHistory.length > 100
+      EventHistory.shift()
+    end
+    Connections.each do |user, out|
+      out << "event:ServerStatus\n" + "data: " + (JSON.generate(status_event.to_h)) + "\n\n"
+    end
+end
+
+def sendEventHistory(out)
+  EventHistory.each do |event|
+    test_condition = event.dig(:message)
+    print("dig message:")
+    pp test_condition
+    if test_condition.nil?
+      out << "event:ServerStatus\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+    else
+      out << "event:Message\n" + "data: " + (JSON.generate(event.to_h)) + "\n\n"
+    end
+  end
+end
 
 
 
 
-#get '/stream/:id', provides: 'text/event-stream' do
-#  response['Access-Control-Allow-Origin'] = 'http://localhost:3006'
-#  response['Access-Control-Allow-Methods'] = "GET, POST, PUT, DELETE, OPTIONS"
-#  response['Access-Control-Allow-Headers'] ="accept, authorization, origin, access-control-allow-origin"
-#  sse = SSE.new(response.stream)
-#  puts "entered get stream"
-#  
-#  begin
-#    Comment.on_change do |data|
-#      sse.write({name: 'Test'}, event: "Message")
-#    end
-#  rescue IOError
-#    # Client Disconnected
-#  ensure
-#    sse.close
-#  end
-#end
 

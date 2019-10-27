@@ -106,38 +106,10 @@ class Board extends React.Component {
             console.log(msg);
             var parted_user = msg["user"]
             console.log(parted_user);
-            //var board_data = document.getElementById('board').value;
-            //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
-
             
-            
-            /*
-            var i = 0;
-            for (; i < msg.length; i++){
-              
-              my.setState({
-                users: [...my.state.users, msg[i]]
-              });
-            }
-            */
-
-           /*
-           var array = [...my.state.users]; // make a separate copy of the array
-           my.setState({
-            users: []
-           });
-           var i = 0;
-           for (; i < array.length; i++){
-             if (array[i] != parted_user){
-              my.setState({
-                users: [...my.state.users, array[i]]
-              });
-             }
-           }
-           */
-          my.setState({users: my.state.users.filter(function(user) { 
-            return user !== parted_user
-        })});
+            my.setState({users: my.state.users.filter(function(user) { 
+              return user !== parted_user
+            })});
            
 
             console.log("my users:");
@@ -154,9 +126,6 @@ class Board extends React.Component {
             var onlineUsers = msg["users"]
             console.log(onlineUsers);
             
-            //var board_data = document.getElementById('board').value;
-            //var post = date_format(msg["created"]) + " : Make some noise for " + msg["user"] + "." 
-
             my.setState({
               users: ["Online"]
             });
@@ -216,7 +185,22 @@ class Board extends React.Component {
             })
         },
         false
-    );    
+    );   
+    
+    eventSource.addEventListener(
+      "ServerStatus",
+        (event) => {
+            console.log("Message");
+            console.log(event.data);
+            var msg = JSON.parse(event.data);
+            //var board_data = document.getElementById('board').value;
+            var post = date_format(msg["created"]) + " STATUS: " + msg["status"];
+            my.setState({
+              messages: [...my.state.messages, post]
+            })
+        },
+        false
+    ); 
   }
 
   //<ReactTable data={this.state.board_data} columns={this.state.columns} />
