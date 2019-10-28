@@ -192,9 +192,19 @@ class Board extends React.Component {
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
             var post = date_format(msg["created"]) + " : " + msg["user"] + " SAYS -> " +msg["message"];
+
+
+            
+
+            var temp_messages = [...my.state.messages]
+            while (temp_messages.length > 40){
+              temp_messages.shift()
+            }
+
             my.setState({
-              messages: [...my.state.messages, post]
+              messages: [...temp_messages, post]
             })
+
         },
         false
     );   
@@ -207,8 +217,14 @@ class Board extends React.Component {
             var msg = JSON.parse(event.data);
             //var board_data = document.getElementById('board').value;
             var post = date_format(msg["created"]) + " STATUS: " + msg["status"] + ". Do you know even see my messages, huh?";
+
+            var temp_messages = [...my.state.messages]
+            while (temp_messages.length > 40){
+              temp_messages.shift()
+            }
+
             my.setState({
-              messages: [...my.state.messages, post]
+              messages: [...temp_messages, post]
             })
         },
         false

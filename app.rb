@@ -34,7 +34,7 @@ EventHistory[eventId] = "id:"+eventId+"\nevent:ServerStatus\n" + "data: " + (JSO
 status_thread = Thread.new do
   hours_alive = 0
   while(1)
-    sleep 3600 #try 10 for debugging
+    sleep 1 #try 10 for debugging
     hours_alive += 1
     callServerStatus(hours_alive)
   end
