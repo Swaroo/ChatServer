@@ -138,10 +138,10 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
   end
 
   # If http_last_event_id is present, the client lost the connection and retrying again, send the events that they missed
-  if !(request.env['HTTP_LAST_EVENT_ID'].nil?)
-    sendRemainingEvents(request.env['HTTP_LAST_EVENT_ID'], username)
-    return
-  end
+  # if !(request.env['HTTP_LAST_EVENT_ID'].nil?)
+  #   sendRemainingEvents(request.env['HTTP_LAST_EVENT_ID'], username)
+  #   return
+  # end
 
   stream :keep_open do |out|
     # If user already logged in, disconnect first connection. Send event history to 2nd connection
@@ -151,8 +151,8 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
       #update Connections hash with new output stream
       Connections[username] = out
 
-      users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
-      out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+      # users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
+      # out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
       sendEventHistory(out)
     else 
       # store username in array and connections hash
