@@ -111,7 +111,7 @@ class Board extends React.Component {
               return user !== parted_user
             })});
 
-            var post = date_format(msg["created"]) + " : " + msg["user"] + "got bored and left the chat." 
+            var post = date_format(msg["created"]) + " : " + msg["user"] + " got bored and left the chat." 
             my.setState({
               messages: [...my.state.messages, post]
             })
@@ -155,6 +155,13 @@ class Board extends React.Component {
             my.setState({
               messages: [...my.state.messages, post]
             })
+
+            if (my.state.users.includes(msg["user"]) === false){
+              my.setState({
+                users: [...my.state.users, msg["user"]]
+              })
+            }
+            
         },
         false
     );
