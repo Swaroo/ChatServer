@@ -34,7 +34,7 @@ EventHistory[eventId] = "id:"+eventId+"\nevent:ServerStatus\n" + "data: " + (JSO
 status_thread = Thread.new do
   hours_alive = 0
   while(1)
-    sleep 1 #try 10 for debugging
+    sleep 36000 #try 10 for debugging
     hours_alive += 1
     callServerStatus(hours_alive)
   end
@@ -137,39 +137,41 @@ get '/stream/:id', provides: 'text/event-stream' do |token|
     return
   end
 
-  # If http_last_event_id is present, the client lost the connection and retrying again, send the events that they missed
-  # if !(request.env['HTTP_LAST_EVENT_ID'].nil?)
-  #   sendRemainingEvents(request.env['HTTP_LAST_EVENT_ID'], username)
-  #   return
-  # end
-
   stream :keep_open do |out|
-    # If user already logged in, disconnect first connection. Send event history to 2nd connection
-    if Connections.key?(username)
-      callDisconnect(username)
 
-      #update Connections hash with new output stream
-      Connections[username] = out
+    #If http_last_event_id is present, the client lost the connection and retrying again, send the events that they missed
+    if !(request.env['HTTP_LAST_EVENT_ID'].nil?)
+      sendRemainingEvents(request.env['HTTP_LAST_EVENT_ID'], out)
+    else
+      # If user already logged in, disconnect first connection. Send event history to 2nd connection
+      if Connections.key?(username)
+        callDisconnect(username)
 
-      # users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
-      # out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
-      sendEventHistory(out)
-    else 
-      # store username in array and connections hash
-      OnlineUsers.push(username)
-      Connections[username] = out
+        #update Connections hash with new output stream
+        Connections[username] = out
 
-      # send Users event
-      users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
-      out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+        # users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
+        # out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
 
-      #EventHistory.push(users_event)
-      #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+        
+        sendEventHistory(out)
+      else 
+        # store username in array and connections hash
+        OnlineUsers.push(username)
+        Connections[username] = out
 
-      sendEventHistory(out)
-      # Send Join event on self (only first time)
-      callJoin(params[:id])
-    end
+        # send Users event
+        users_event = Users.new(Time.now.getutc.to_i, OnlineUsers)
+        out << "id:"+SecureRandom.hex+"\nevent:Users\n" + "data:" + (JSON.generate(users_event.to_h)) + "\n\n"
+
+        #EventHistory.push(users_event)
+        #EventHistory.sort!{ |a,b| a[:created] <=> b[:created]}
+
+        sendEventHistory(out)
+        # Send Join event on self (only first time)
+        callJoin(params[:id])
+      end
+    end    
 
     # when client disconnects, remove from list of users and connections hash
     out.callback do   
@@ -270,21 +272,14 @@ def sendEventHistory(out)
   end
 end
 
-def sendRemainingEvents(id, username)
-  puts "Username - ",username
-  puts "Event Id - ", id
-  puts "Event History - "
-  pp EventHistory
-  puts "Connections - "
-  puts Connections
+def sendRemainingEvents(id, out)
   found = false
   EventHistory.each do |key, value|
-    if found || id == key
-      if id == key
-        found = true
-      else
-        Connections[username] << value
-      end
+    if found
+      out << value
+    end
+    if !found && id == key
+      found = true
     end
   end
 end

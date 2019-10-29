@@ -11,6 +11,7 @@ class Login extends React.Component {
     this.state = {
       username: '',
       password: '',
+      url: '',
       tokens: {
         
       }
@@ -33,6 +34,11 @@ class Login extends React.Component {
     this.setState({password: event.target.value})
   }
 
+  // update url in state when keys are typed into login form
+  onUrlChange = (event) =>{
+    this.setState({url: event.target.value})
+  }
+
   // call post to server when user submits login form
   onSubmit = (event) => {
     event.preventDefault(); // prevents page from reloading with username + password visible as url query
@@ -42,8 +48,11 @@ class Login extends React.Component {
     console.log("username: " + this.state.username);
     console.log("password: " + this.state.password);
 
+
+    sessionStorage.url = this.state.url;
+
    // call post with user data
-   axios.post( "http://localhost:3000/login", null, { 
+   axios.post( this.state.url+"/login", null, { 
       params: {
         username: this.state.username,
         password: this.state.password 
@@ -72,19 +81,6 @@ class Login extends React.Component {
       }
 
     });
-
-
-    
-   /*
-   fetch('http://localhost:3000/login', {
-    method: 'POST',
-    body: 'username=aa&password=bb' 
-  }).then(function(response) {
-    console.log(response);
-  });
-  */
-  
-
    
 	}
 	
@@ -94,11 +90,14 @@ class Login extends React.Component {
 				<form onSubmit={this.onSubmit}>
           <h1>Login</h1>
 
+          <label> <b>Beackend-URL</b> </label>
+          <input type="text" value={this.state.url} onChange={this.onUrlChange} required/>
+          <br></br>
           <label> <b>Username</b> </label>
           <input type="text" value={this.state.username} onChange={this.onNameChange} required/>
           <br></br>
           <label> <b>Password</b> </label>
-          <input type="text" value={this.state.password} onChange={this.onPasswordChange} required/>
+          <input type="password" value={this.state.password} onChange={this.onPasswordChange} required/>
           <br></br>
           <button type="submit" className="btn">Login</button>
         </form>

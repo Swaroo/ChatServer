@@ -44,7 +44,7 @@ class Board extends React.Component {
 
       this.setState({out_message: ''});
 
-      axios.post( "http://localhost:3000/message", null, { 
+      axios.post( sessionStorage.url+"/message", null, { 
       params: {
         message: cur_message
       }, 
@@ -88,7 +88,7 @@ class Board extends React.Component {
     
 
     this.setState({token: old_state.token});
-    var eventSource = new EventSource("http://localhost:3000/stream/"+old_state.token);
+    var eventSource = new EventSource(sessionStorage.url+"/stream/"+old_state.token);
 
 
     let my = this;
